@@ -24,16 +24,14 @@ export default function Login() {
     <div className="login-page">
       <form className="login-card" onSubmit={handleSubmit}>
         <h1>TrackFlow</h1>
-        <p className="subtitle">Military Asset Management System</p>
+        <p className="subtitle">Asset Operations Management System</p>
         {error && <div className="error">{error}</div>}
         <label>Username</label>
-        <input value={username} onChange={(e) => setUsername(e.target.value)} required />
+        <input value={username} onChange={(e) => setUsername(e.target.value)} required autoFocus />
         <label>Password</label>
         <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
         <button type="submit">Sign In</button>
-        <div className="hint">
-          Demo: admin/admin123 · cmd_alpha/commander123 · log_alpha/logistics123
-        </div>
+        <div className="hint">Secure role-based access</div>
       </form>
     </div>
   );
