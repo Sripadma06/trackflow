@@ -8,6 +8,7 @@ export default function Dashboard() {
   const [equipmentTypes, setEquipmentTypes] = useState([]);
   const [filters, setFilters] = useState({ baseId: '', equipmentTypeId: '', startDate: '', endDate: '' });
   const [data, setData] = useState(null);
+  const [recentTransfers, setRecentTransfers] = useState([]);
   const [showNetMovement, setShowNetMovement] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -18,6 +19,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchDashboard();
+    fetchRecentTransfers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters]);
 
@@ -33,9 +35,23 @@ export default function Dashboard() {
       .finally(() => setLoading(false));
   }
 
+  function fetchRecentTransfers() {
+    const params = {};
+    if (filters.baseId) params.baseId = filters.baseId;
+    if (filters.equipmentTypeId) params.equipmentTypeId = filters.equipmentTypeId;
+    api.get('/api/transfers', { params })
+      .then((res) => setRecentTransfers(res.data.slice(0, 6)))
+      .catch(() => {});
+  }
+
+  const available = data ? data.closingBalance - data.assigned : null;
+
   return (
     <div className="page">
-      <h2>Dashboard</h2>
+      <div className="page-header">
+        <h2>Dashboard</h2>
+        <p className="page-subtitle">Asset overview and movement activity</p>
+      </div>
 
       <div className="filters">
         {user.role === 'ADMIN' && (
@@ -52,42 +68,88 @@ export default function Dashboard() {
         <input type="date" value={filters.endDate} onChange={(e) => setFilters({ ...filters, endDate: e.target.value })} />
       </div>
 
-      {loading && <p>Loading...</p>}
+      {loading && <p className="muted">Loading...</p>}
 
       {data && (
-        <div className="metrics-grid">
-          <div className="metric-card">
-            <div className="metric-label">Opening Balance</div>
-            <div className="metric-value">{data.openingBalance}</div>
+        <>
+          <div className="kpi-grid">
+            <div className="kpi-card kpi-opening">
+              <div className="kpi-label">Opening Balance</div>
+              <div className="kpi-value">{data.openingBalance.toLocaleString()}</div>
+              <div className="kpi-caption">Assets at start</div>
+            </div>
+            <div className="kpi-card kpi-net clickable" onClick={() => setShowNetMovement(true)}>
+              <div className="kpi-label">Net Movement</div>
+              <div className="kpi-value">{data.netMovement >= 0 ? '+' : ''}{data.netMovement.toLocaleString()}</div>
+              <div className="kpi-caption kpi-link">Purchases + Transfers &middot; click for details</div>
+            </div>
+            <div className="kpi-card kpi-closing">
+              <div className="kpi-label">Closing Balance</div>
+              <div className="kpi-value">{data.closingBalance.toLocaleString()}</div>
+              <div className="kpi-caption">Current balance</div>
+            </div>
+            <div className="kpi-card kpi-assigned">
+              <div className="kpi-label">Assigned</div>
+              <div className="kpi-value">{data.assigned.toLocaleString()}</div>
+              <div className="kpi-caption">Currently assigned</div>
+            </div>
+            <div className="kpi-card kpi-expended">
+              <div className="kpi-label">Expended</div>
+              <div className="kpi-value">{data.expended.toLocaleString()}</div>
+              <div className="kpi-caption">Assets expended</div>
+            </div>
           </div>
-          <div className="metric-card clickable" onClick={() => setShowNetMovement(true)}>
-            <div className="metric-label">Net Movement</div>
-            <div className="metric-value">{data.netMovement}</div>
-            <div className="metric-sub">click for details</div>
+
+          <div className="split-grid">
+            <div className="panel">
+              <div className="panel-title">Net Movement</div>
+              <div className="breakdown-row"><span>Purchases</span><span className="pos">+{data.purchases}</span></div>
+              <div className="breakdown-row"><span>Transfer In</span><span className="pos">+{data.transfersIn}</span></div>
+              <div className="breakdown-row"><span>Transfer Out</span><span className="neg">-{data.transfersOut}</span></div>
+              <div className="breakdown-row breakdown-total"><span>Net Movement</span><span>{data.netMovement >= 0 ? '+' : ''}{data.netMovement}</span></div>
+            </div>
+            <div className="panel">
+              <div className="panel-title">Asset Status</div>
+              <div className="breakdown-row"><span>Assigned</span><span className="assigned-color">{data.assigned}</span></div>
+              <div className="breakdown-row"><span>Expended</span><span className="expended-color">{data.expended}</span></div>
+              <div className="breakdown-row breakdown-total"><span>Available (est.)</span><span>{available}</span></div>
+            </div>
           </div>
-          <div className="metric-card">
-            <div className="metric-label">Closing Balance</div>
-            <div className="metric-value">{data.closingBalance}</div>
+
+          <div className="panel">
+            <div className="panel-title">Recent Transfers</div>
+            {recentTransfers.length === 0 && <p className="muted">No transfers recorded yet.</p>}
+            {recentTransfers.length > 0 && (
+              <table>
+                <thead>
+                  <tr><th>Date</th><th>Equipment</th><th>From</th><th>To</th><th>Qty</th></tr>
+                </thead>
+                <tbody>
+                  {recentTransfers.map((t) => (
+                    <tr key={t.id}>
+                      <td>{t.transferDate}</td>
+                      <td>{t.equipmentType.name}</td>
+                      <td>{t.fromBase.name}</td>
+                      <td>{t.toBase.name}</td>
+                      <td>{t.quantity}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
-          <div className="metric-card">
-            <div className="metric-label">Assigned</div>
-            <div className="metric-value">{data.assigned}</div>
-          </div>
-          <div className="metric-card">
-            <div className="metric-label">Expended</div>
-            <div className="metric-value">{data.expended}</div>
-          </div>
-        </div>
+        </>
       )}
 
       {showNetMovement && data && (
         <div className="modal-backdrop" onClick={() => setShowNetMovement(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h3>Net Movement Breakdown</h3>
-            <p>Purchases: <strong>{data.purchases}</strong></p>
-            <p>Transfers In: <strong>{data.transfersIn}</strong></p>
-            <p>Transfers Out: <strong>{data.transfersOut}</strong></p>
-            <p>Net Movement: <strong>{data.netMovement}</strong></p>
+            <h3>Net Movement</h3>
+            <p className="modal-date">{filters.startDate || 'All time'} &ndash; {filters.endDate || 'today'}</p>
+            <div className="breakdown-row"><span>Purchases</span><span className="pos">+{data.purchases}</span></div>
+            <div className="breakdown-row"><span>Transfer In</span><span className="pos">+{data.transfersIn}</span></div>
+            <div className="breakdown-row"><span>Transfer Out</span><span className="neg">-{data.transfersOut}</span></div>
+            <div className="breakdown-row breakdown-total"><span>Net Movement</span><span>{data.netMovement >= 0 ? '+' : ''}{data.netMovement}</span></div>
             <button onClick={() => setShowNetMovement(false)}>Close</button>
           </div>
         </div>
