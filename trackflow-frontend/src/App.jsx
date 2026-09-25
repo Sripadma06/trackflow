@@ -1,22 +1,14 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
-import Navbar from './components/Navbar';
+import Layout from './components/Layout';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Purchases from './pages/Purchases';
 import Transfers from './pages/Transfers';
 import Assignments from './pages/Assignments';
+import AuditLogs from './pages/AuditLogs';
 import './styles.css';
-
-function Layout({ children }) {
-  return (
-    <>
-      <Navbar />
-      <main>{children}</main>
-    </>
-  );
-}
 
 function Home() {
   const { user } = useAuth();
@@ -36,6 +28,9 @@ export default function App() {
           </Route>
           <Route element={<ProtectedRoute roles={['ADMIN', 'BASE_COMMANDER']} />}>
             <Route path="/assignments" element={<Layout><Assignments /></Layout>} />
+          </Route>
+          <Route element={<ProtectedRoute roles={['ADMIN']} />}>
+            <Route path="/audit-logs" element={<Layout><AuditLogs /></Layout>} />
           </Route>
           <Route path="/" element={<Home />} />
         </Routes>
