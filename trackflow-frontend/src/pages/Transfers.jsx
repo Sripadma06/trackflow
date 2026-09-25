@@ -45,55 +45,87 @@ export default function Transfers() {
 
   return (
     <div className="page">
-      <h2>Transfers</h2>
-
-      {canCreate && (
-        <form className="inline-form" onSubmit={handleSubmit}>
-          {error && <div className="error">{error}</div>}
-          <select value={form.fromBaseId} onChange={(e) => setForm({ ...form, fromBaseId: e.target.value })} required>
-            <option value="">From Base</option>
-            {bases.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
-          </select>
-          <select value={form.toBaseId} onChange={(e) => setForm({ ...form, toBaseId: e.target.value })} required>
-            <option value="">To Base</option>
-            {bases.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
-          </select>
-          <select value={form.equipmentTypeId} onChange={(e) => setForm({ ...form, equipmentTypeId: e.target.value })} required>
-            <option value="">Equipment Type</option>
-            {equipmentTypes.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
-          </select>
-          <input type="number" min="1" placeholder="Quantity" value={form.quantity} onChange={(e) => setForm({ ...form, quantity: e.target.value })} required />
-          <input type="date" value={form.transferDate} onChange={(e) => setForm({ ...form, transferDate: e.target.value })} required />
-          <button type="submit">Record Transfer</button>
-        </form>
-      )}
-
-      <div className="filters">
-        <select value={filters.equipmentTypeId} onChange={(e) => setFilters({ ...filters, equipmentTypeId: e.target.value })}>
-          <option value="">All Equipment Types</option>
-          {equipmentTypes.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
-        </select>
-        <input type="date" value={filters.startDate} onChange={(e) => setFilters({ ...filters, startDate: e.target.value })} />
-        <input type="date" value={filters.endDate} onChange={(e) => setFilters({ ...filters, endDate: e.target.value })} />
+      <div className="page-header">
+        <h2>Transfers</h2>
+        <p className="page-subtitle">Move assets between bases with a full audit trail</p>
       </div>
 
-      <table>
-        <thead>
-          <tr><th>Date</th><th>From</th><th>To</th><th>Equipment</th><th>Quantity</th><th>Recorded By</th></tr>
-        </thead>
-        <tbody>
+      {canCreate && (
+        <div className="panel">
+          <div className="panel-title">Transfer Asset</div>
+          <form className="transfer-form" onSubmit={handleSubmit}>
+            {error && <div className="error">{error}</div>}
+            <div className="transfer-form-row">
+              <div className="transfer-field">
+                <label>From Base</label>
+                <select value={form.fromBaseId} onChange={(e) => setForm({ ...form, fromBaseId: e.target.value })} required>
+                  <option value="">Select base</option>
+                  {bases.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+                </select>
+              </div>
+              <div className="transfer-arrow">&rarr;</div>
+              <div className="transfer-field">
+                <label>To Base</label>
+                <select value={form.toBaseId} onChange={(e) => setForm({ ...form, toBaseId: e.target.value })} required>
+                  <option value="">Select base</option>
+                  {bases.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+                </select>
+              </div>
+            </div>
+            <div className="transfer-form-row">
+              <div className="transfer-field">
+                <label>Equipment</label>
+                <select value={form.equipmentTypeId} onChange={(e) => setForm({ ...form, equipmentTypeId: e.target.value })} required>
+                  <option value="">Select equipment</option>
+                  {equipmentTypes.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                </select>
+              </div>
+              <div className="transfer-field">
+                <label>Quantity</label>
+                <input type="number" min="1" value={form.quantity} onChange={(e) => setForm({ ...form, quantity: e.target.value })} required />
+              </div>
+              <div className="transfer-field">
+                <label>Transfer Date</label>
+                <input type="date" value={form.transferDate} onChange={(e) => setForm({ ...form, transferDate: e.target.value })} required />
+              </div>
+            </div>
+            <button type="submit" className="transfer-submit">Create Transfer</button>
+          </form>
+        </div>
+      )}
+
+      <div className="panel">
+        <div className="panel-title-row">
+          <div className="panel-title">Transfer History</div>
+          <div className="filters filters-compact">
+            <select value={filters.equipmentTypeId} onChange={(e) => setFilters({ ...filters, equipmentTypeId: e.target.value })}>
+              <option value="">All Equipment Types</option>
+              {equipmentTypes.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+            </select>
+            <input type="date" value={filters.startDate} onChange={(e) => setFilters({ ...filters, startDate: e.target.value })} />
+            <input type="date" value={filters.endDate} onChange={(e) => setFilters({ ...filters, endDate: e.target.value })} />
+          </div>
+        </div>
+
+        <div className="transfer-list">
           {transfers.map((t) => (
-            <tr key={t.id}>
-              <td>{t.transferDate}</td>
-              <td>{t.fromBase.name}</td>
-              <td>{t.toBase.name}</td>
-              <td>{t.equipmentType.name}</td>
-              <td>{t.quantity}</td>
-              <td>{t.createdBy}</td>
-            </tr>
+            <div className="transfer-item" key={t.id}>
+              <div className="transfer-item-route">
+                <span>{t.fromBase.name}</span>
+                <span className="route-arrow">&#8594;</span>
+                <span>{t.toBase.name}</span>
+              </div>
+              <div className="transfer-item-detail">
+                <span>{t.equipmentType.name}</span>
+                <span>{t.quantity} units</span>
+                <span>{t.transferDate}</span>
+                <span className="status-badge recorded">Completed</span>
+              </div>
+            </div>
           ))}
-        </tbody>
-      </table>
+          {transfers.length === 0 && <p className="muted">No transfers recorded yet.</p>}
+        </div>
+      </div>
     </div>
   );
 }
